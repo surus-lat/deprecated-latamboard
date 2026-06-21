@@ -33,6 +33,19 @@ function renderMarkdownLinks(text: string) {
   return { __html: html }
 }
 
+const HF_BASE = 'https://huggingface.co/datasets/mauroibz/leaderboard-results/resolve/main'
+
+async function fetchJson<T>(path: string): Promise<T> {
+  // Try HuggingFace first (always fresh), fall back to bundled /public file
+  try {
+    const res = await fetch(`${HF_BASE}/${path}`, { cache: 'no-store' })
+    if (res.ok) return res.json()
+  } catch { /* network error — try local */ }
+  const local = await fetch(`/${path}`)
+  if (!local.ok) throw new Error(`${path} not found (${local.status})`)
+  return local.json()
+}
+
 function useTasksData() {
   const [groups, setGroups] = useState<TaskGroups | null>(null)
   const [tasks, setTasks] = useState<TasksList | null>(null)
@@ -40,8 +53,8 @@ function useTasksData() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/tasks_groups.json').then(r => r.json() as Promise<TaskGroups>),
-      fetch('/tasks_list.json').then(r => r.json() as Promise<TasksList>),
+      fetchJson<TaskGroups>('tasks_groups.json'),
+      fetchJson<TasksList>('tasks_list.json'),
     ]).then(([g, t]) => {
       setGroups(g)
       setTasks(t)
@@ -91,7 +104,7 @@ export function Tests() {
     return <div className="container py-10 text-muted-foreground">{t('tests.loading')}</div>
   }
 
-  const entries = Object.entries(groups.task_groups)
+  const entries = Object.entries(groups.task_groups ?? {})
 
   function lx<T extends Record<string, any>>(obj: T, key: string): string {
     const suffixes = locale === 'pt' ? ['_pt', '_pr'] : locale === 'es' ? ['_es'] : ['_en']

@@ -78,7 +78,7 @@ export function Landing() {
     const aggregatesArr = ['overall_latam_score', 'spanish_score', 'portuguese_score']
     const aggregatesSet = new Set(aggregatesArr)
 
-    const groupPrefixMap: Record<string, string> = { latam_es: 'spanish_', latam_pr: 'portuguese_' }
+    const groupPrefixMap: Record<string, string> = { latam_es: 'spanish_', latam_pr: 'portuguese_', transcription: 'transcription_' }
     const map: Record<string, string[]> = {}
     const order: string[] = Object.keys(taskGroups?.task_groups ?? {})
     for (const key of order) {
