@@ -8,6 +8,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Before editing anything in `src/` or `public/` in response to a data-change request, invoke the `update-data` skill: `.claude/skills/update-data/SKILL.md`. It contains the exact workflow, schema crib sheet, and the common-mistakes table that prevents the multi-commit "edits don't take effect" loop documented in `learnings.jsonl`.
 
+**If the user wants to change the About page (title, authors, abstract, body, keywords, citation): the About page is a Quarto-rendered standalone HTML at `public/about.html`** (~1.9MB) — not a React component. The `.qmd` source is not checked in; every edit is a surgical text edit on the rendered HTML. The markdown source for the paper content is `manuscript.md` at the repo root.
+
+Before touching `public/about.html`, invoke the `update-paper-about` skill: `.claude/skills/update-paper-about/SKILL.md`. It lists the seven edit zones that all need to stay in sync (head meta, citation meta, h1, author cards, abstract, TOC, body sections, BibTeX appendix).
+
+**If the user wants to change a redirect, URL rewrite, response header, SPA fallback, or anything about how latamboard.ai routes requests: that config is NOT in this repo.** The site is on Cloudflare Pages and routing lives in the Cloudflare dashboard. Editing `src/` cannot fix a redirect that runs at the edge.
+
+Before changing routing, invoke the `cloudflare-routing` skill: `.claude/skills/cloudflare-routing/SKILL.md`. It explains where to look in the CF dashboard, how to verify with `curl -sI`, and when to put routing in the repo (`public/_redirects`) vs leave it in the dashboard.
+
 ## Project Overview
 
 LatamBoard is a React + Vite application for evaluating LLMs on Spanish and Portuguese tasks. It features a sortable/filterable leaderboard table, task descriptions, and data sourced from a Hugging Face dataset.
