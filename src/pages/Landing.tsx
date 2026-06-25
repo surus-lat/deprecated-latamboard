@@ -26,18 +26,12 @@ type TaskGroup = {
 
 type TaskGroups = { task_groups: Record<string, TaskGroup> }
 
-async function fetchLeaderboard(): Promise<LeaderboardRow[]> {
-  try {
-    // Try Hugging Face dataset JSON files (assumes converted to parquet/JSON compatible listing)
-    // We'll hit the raw file list via the repo tree API. If that fails, fallback to local file.
-    const res = await fetch('https://huggingface.co/datasets/LatamBoard/leaderboard-results/resolve/main/leaderboard_table.json', { cache: 'no-store' })
-    if (res.ok) {
-      return await res.json()
-    }
-  } catch {}
-  // Local fallback during dev
-  const local = await fetch('/leaderboard_table.json')
-  return await local.json()
+const HF_BASE = 'https://huggingface.co/datasets/LatamBoard/leaderboard-results/resolve/main'
+
+async function fetchHFJson<T>(path: string): Promise<T> {
+  const res = await fetch(`${HF_BASE}/${path}`, { cache: 'no-store' })
+  if (!res.ok) throw new Error(`${path} not found on HF (${res.status})`)
+  return res.json()
 }
 
 const DEFAULT_VISIBLE = [
@@ -59,10 +53,12 @@ export function Landing() {
   const [showMobileFilters, setShowMobileFilters] = useState<boolean>(false)
 
   useEffect(() => {
-    fetchLeaderboard().then(setData).catch(() => setError('Failed to load leaderboard data'))
+    fetchHFJson<LeaderboardRow[]>('leaderboard_table.json')
+      .then(setData)
+      .catch(() => setError('Failed to load leaderboard data'))
     Promise.all([
-      fetch('/tasks_groups.json').then(r => r.json() as Promise<TaskGroups>),
-      fetch('/tasks_list.json').then(r => r.json() as Promise<TasksList>),
+      fetchHFJson<TaskGroups>('tasks_groups.json'),
+      fetchHFJson<TasksList>('tasks_list.json'),
     ]).then(([g, t]) => {
       setTaskGroups(g)
       setTasksList(t)

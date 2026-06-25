@@ -2,14 +2,32 @@
 
 Simple, stylized leaderboard for evaluating LLMs on Spanish and Portuguese tasks in LATAM. Built with React, Vite, and TailwindCSS.
 
-Data is sourced from a public dataset on Hugging Face. See Data Source below.
+## Updating leaderboard data (read this first)
+
+**The data is not in this repo.** LatamBoard fetches all leaderboard rows and task content at runtime from the public Hugging Face dataset:
+
+> https://huggingface.co/datasets/LatamBoard/leaderboard-results
+
+To change a score, add a model, edit a task description, or fix a group:
+
+1. Clone the dataset: `git clone https://huggingface.co/datasets/LatamBoard/leaderboard-results`
+2. Edit one of three files:
+   - `leaderboard_table.json` — rows on the landing page (model name + scores)
+   - `tasks_groups.json` — group cards on `/tests`; column groupings on landing
+   - `tasks_list.json` — individual task cards inside each group on `/tests`
+3. `git add`, `git commit`, `git push` to `main`
+4. Reload latamboard in your browser — changes appear immediately (`cache: 'no-store'` is set)
+
+**Do not** edit `public/*.json` (the files don't exist), run `npm run fetch:data` (script was removed), or change scores in `src/`. The HF dataset is the only source.
+
+For the full how-to, schema crib sheet, troubleshooting, and common mistakes, see `.claude/skills/update-data/SKILL.md` — it loads automatically for AI agents working in this repo.
 
 ## Features
 
 - Landing page with hero and a sortable, filterable results table
   - Default visible aggregates: `overall_latam_score`, `spanish_score`, `portuguese_score`
   - Column toggles grouped by task categories. Aggregates and per-language tasks are visually distinguished
-  - Columns order is derived from `public/tasks_groups.json`
+  - Columns order is derived from `tasks_groups.json` (fetched from HF)
 - Tasks page with expandable group cards and per-task cards
   - Group cards: click to expand the long description (supports inline Markdown-style links)
   - Task cards: click to expand long description and dataset link
@@ -21,7 +39,7 @@ Data is sourced from a public dataset on Hugging Face. See Data Source below.
 
 - React + Vite
 - TailwindCSS (brand tokens in `src/index.css`)
-- No backend required; data fetched from `public/`
+- No backend; data fetched directly from Hugging Face on page load
 
 ## Getting Started
 
@@ -32,49 +50,14 @@ Install and run:
 
 ```bash
 npm i
-
-# Fetch latest public data into /public (table + task configs)
-npm run fetch:data
-
 npm run dev
 ```
 
-Open the printed Local URL.
+Open the printed Local URL. Both pages fetch `leaderboard_table.json`, `tasks_groups.json`, and `tasks_list.json` directly from Hugging Face — there is no `public/` data step.
 
-## Data Fetching
+## Data Source
 
-This project ships with a small script to download dataset files into `public/`.
-
-Script: `scripts/fetch-data.mjs`
-
-NPM script: `npm run fetch:data`
-
-Defaults:
-- Downloads `leaderboard_table.json`, `tasks_groups.json`, `tasks_list.json` from the Hugging Face dataset resolve URL
-
-Environment variables (optional):
-- `LEADERBOARD_DATA_URL` — Base resolve URL. Default: `https://huggingface.co/datasets/mauroibz/leaderboard-results/resolve/main`
-- `LEADERBOARD_DATA_FILES` — Comma-separated files to fetch. Default: `leaderboard_table.json,tasks_groups.json,tasks_list.json`
-- `LEADERBOARD_FETCH_ALL` — If `true`, fetch the entire dataset repository (uses HF tree API)
-- `LEADERBOARD_REPO` — Repo id like `mauroibz/leaderboard-results` (auto-parsed from URL)
-- `LEADERBOARD_FETCH_PATTERN` — Filter when fetching all (default `.json`, use `*` for all)
-- `HF_TOKEN` — Optional token for private or rate-limited access
-
-Examples:
-
-```bash
-# Default (table + tasks config)
-npm run fetch:data
-
-# Fetch specific files
-LEADERBOARD_DATA_FILES='leaderboard_table.json,tasks_groups.json,tasks_list.json' npm run fetch:data
-
-# Fetch entire repo JSONs (including summaries/*)
-LEADERBOARD_FETCH_ALL=true npm run fetch:data
-
-# Fetch entire repo (all files)
-LEADERBOARD_FETCH_ALL=true LEADERBOARD_FETCH_PATTERN='*' npm run fetch:data
-```
+See [Updating leaderboard data](#updating-leaderboard-data-read-this-first) at the top. If HF is unreachable at runtime, the pages display a "Failed to load" error; there is no bundled fallback.
 
 ## Configuration
 
@@ -87,16 +70,11 @@ LEADERBOARD_FETCH_ALL=true LEADERBOARD_FETCH_PATTERN='*' npm run fetch:data
 ```
 latam-leaderboard/
   public/
-    leaderboard_table.json
-    tasks_groups.json
-    tasks_list.json
-    summaries/...
-  scripts/
-    fetch-data.mjs           # data downloader (configurable)
+    latam_map.png           # static image asset only
   src/
     pages/
-      Landing.tsx           # hero + leaderboard table
-      Tests.tsx             # task groups + task cards (expandable)
+      Landing.tsx           # hero + leaderboard table (fetches from HF)
+      Tests.tsx             # task groups + task cards (fetches from HF)
       About.tsx             # who/why/how
       Submit.tsx            # suggestion form (client-only)
     index.css               # Tailwind + brand tokens
@@ -117,11 +95,11 @@ Preview locally:
 npm run preview
 ```
 
-Any static host (e.g., Netlify, Vercel, GitHub Pages, S3) can serve the `dist/` folder. Ensure `public/` contains the JSON files (run `npm run fetch:data` in your CI/CD before build, if needed).
+Any static host (e.g., Netlify, Vercel, GitHub Pages, S3) can serve the `dist/` folder. No data step is required at build or deploy time — the app fetches from HF in the browser.
 
 ## Data Source & Community
 
-- Dataset: https://huggingface.co/datasets/mauroibz/leaderboard-results
+- Dataset: https://huggingface.co/datasets/LatamBoard/leaderboard-results
 - Discord: https://discord.com/invite/yGCCUhqtpS
 - Website: https://surus.dev
 

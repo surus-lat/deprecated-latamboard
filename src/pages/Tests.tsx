@@ -36,14 +36,9 @@ function renderMarkdownLinks(text: string) {
 const HF_BASE = 'https://huggingface.co/datasets/LatamBoard/leaderboard-results/resolve/main'
 
 async function fetchJson<T>(path: string): Promise<T> {
-  // Try HuggingFace first (always fresh), fall back to bundled /public file
-  try {
-    const res = await fetch(`${HF_BASE}/${path}`, { cache: 'no-store' })
-    if (res.ok) return res.json()
-  } catch { /* network error — try local */ }
-  const local = await fetch(`/${path}`)
-  if (!local.ok) throw new Error(`${path} not found (${local.status})`)
-  return local.json()
+  const res = await fetch(`${HF_BASE}/${path}`, { cache: 'no-store' })
+  if (!res.ok) throw new Error(`${path} not found on HF (${res.status})`)
+  return res.json()
 }
 
 function useTasksData() {

@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## First, read this
+
+**If the user wants to add, change, or remove any leaderboard content (rows, scores, task descriptions, groups): the data is NOT in this repo.** It lives on Hugging Face at `LatamBoard/leaderboard-results` and is fetched at runtime.
+
+Before editing anything in `src/` or `public/` in response to a data-change request, invoke the `update-data` skill: `.claude/skills/update-data/SKILL.md`. It contains the exact workflow, schema crib sheet, and the common-mistakes table that prevents the multi-commit "edits don't take effect" loop documented in `learnings.jsonl`.
+
 ## Project Overview
 
 LatamBoard is a React + Vite application for evaluating LLMs on Spanish and Portuguese tasks. It features a sortable/filterable leaderboard table, task descriptions, and data sourced from a Hugging Face dataset.
@@ -10,7 +16,6 @@ LatamBoard is a React + Vite application for evaluating LLMs on Spanish and Port
 
 ### Setup & Development
 - `npm install` - Install dependencies
-- `npm run fetch:data` - Download latest dataset from Hugging Face into /public
 - `npm run dev` - Start development server (runs on port 8080)
 
 ### Build & Quality
@@ -20,11 +25,9 @@ LatamBoard is a React + Vite application for evaluating LLMs on Spanish and Port
 - `npm run lint` - Run ESLint
 
 ### Data Management
-The `npm run fetch:data` script downloads JSON files from a Hugging Face dataset. Key environment variables:
-- `LEADERBOARD_DATA_URL` - Base URL (defaults to HF dataset resolve path)
-- `LEADERBOARD_DATA_FILES` - Comma-separated files to fetch
-- `LEADERBOARD_FETCH_ALL=true` - Fetch entire dataset repo
-- `HF_TOKEN` - Optional token for private/rate-limited access
+**Hugging Face is the only source of truth.** There is no `fetch:data` script and no bundled JSON files. Both Landing and Tests pages fetch directly from `https://huggingface.co/datasets/LatamBoard/leaderboard-results/resolve/main/` at runtime with `cache: 'no-store'`.
+
+To change leaderboard or task content: edit and push the JSON files in the HF dataset repo. Reload the page to see the change. Editing files in this repo will **not** affect the data shown.
 
 ## Architecture
 
@@ -33,15 +36,14 @@ The `npm run fetch:data` script downloads JSON files from a Hugging Face dataset
 - **Styling**: TailwindCSS with custom design system
 - **Routing**: React Router DOM
 - **Internationalization**: Custom i18n system supporting EN/ES/PT
-- **Data**: Static JSON files in /public (no backend)
+- **Data**: Fetched at runtime from Hugging Face (no bundled data, no backend)
 
 ### Key Directories
 - `/src/pages/` - Route components (Landing, About, Tests, Submit)
 - `/src/components/ui/` - Reusable UI components
 - `/src/i18n/` - Internationalization system with locale detection
 - `/src/content/` - Static content files
-- `/public/` - Dataset JSON files (populated by fetch-data script)
-- `/scripts/` - Data fetching utilities
+- `/public/` - Static assets only (e.g., `latam_map.png`). No JSON data.
 
 ### Design System
 - Custom CSS variables defined in `src/index.css`
@@ -50,10 +52,10 @@ The `npm run fetch:data` script downloads JSON files from a Hugging Face dataset
 - Inter font family as primary typeface
 
 ### Data Flow
-1. Dataset files are fetched from Hugging Face via `npm run fetch:data`
-2. JSON files stored in `/public/` are loaded by React components
-3. Landing page displays sortable leaderboard table with column toggles
-4. Tests page shows expandable task group cards
+1. Browser loads the page; React effect fires `fetch(HF_BASE + '/...json', {cache: 'no-store'})`
+2. Landing fetches `leaderboard_table.json`, `tasks_groups.json`, `tasks_list.json`
+3. Tests fetches `tasks_groups.json` and `tasks_list.json`
+4. If HF is unreachable, pages show a "Failed to load" error — there is no local fallback
 5. All content supports multilingual display via i18n system
 
 ### Internationalization
